@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { getResponses, resetResponses, type Row } from "@/lib/admin.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { resetResponses } from "@/lib/admin.functions";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -22,17 +23,14 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
+type Row = { id: string; answer: string; no_attempts: number; created_at: string };
+
 function Admin() {
   const [rows, setRows] = useState<Row[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const load = () =>
-    getResponses()
-      .then((data) => { setRows(data); setError(null); })
-      .catch((e) => {
-        setRows((r) => r ?? []);
-        setError(e instanceof Error ? e.message : "Erreur de chargement");
-      });
+    supabase.from("responses").select("*").order("created_at", { ascending: false })
+      .then(({ data }) => setRows((data as Row[]) ?? []));
 
   useEffect(() => {
     load();
@@ -41,6 +39,7 @@ function Admin() {
   }, []);
 
   const [resetting, setResetting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const reset = async () => {
     setResetting(true);
@@ -48,9 +47,8 @@ function Admin() {
     try {
       await resetResponses();
       setRows([]);
-    } catch (e) {
-      const detail = e instanceof Error ? e.message : "";
-      setError(`Impossible de réinitialiser la réponse.${detail ? " " + detail : ""}`);
+    } catch {
+      setError("Impossible de réinitialiser la réponse. Réessaie.");
     } finally {
       setResetting(false);
     }
@@ -98,6 +96,7 @@ function Admin() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
         </>
       ) : (
         <>
@@ -109,7 +108,6 @@ function Admin() {
           <p className="mt-6 text-xs text-muted-foreground">Actualisation automatique toutes les 5 secondes</p>
         </>
       )}
-      {error && <p className="mt-6 max-w-md text-sm text-destructive">{error}</p>}
     </main>
   );
 }
