@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { saveYes } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -219,7 +219,7 @@ function Index() {
           Veux-tu m'épouser ?
         </h2>
         <div className="mt-12 flex min-h-24 items-center justify-center gap-6 animate-fade-rise" style={{ animationDelay: "4.4s" }}>
-          <button onClick={() => { setYes(true); supabase.from("responses").insert({ answer: "oui", no_attempts: count }).then(); }}
+          <button onClick={() => { setYes(true); saveYes({ data: { noAttempts: count } }).catch(() => {}); }}
             style={{ transform: `scale(${yesScale})` }}
             className="rounded-full bg-love px-10 py-4 font-body text-lg font-semibold text-primary-foreground shadow-glow transition-transform duration-500 ease-out hover:brightness-110 animate-pulse-heart">
             Oui, pour toujours ❤
